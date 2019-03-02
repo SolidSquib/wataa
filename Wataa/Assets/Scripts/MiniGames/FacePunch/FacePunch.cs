@@ -10,6 +10,8 @@ public class FacePunch : MonoBehaviour
 	public int maskResolution = 1024;
 	public float blendPower = 0.2f;
 
+	public ParticleSystem bloodDrops;
+
 	private Material faceMaterial;
 	private Texture2D faceMask;
 	private Texture2D punchResized;
@@ -56,24 +58,40 @@ public class FacePunch : MonoBehaviour
 				hitY = hitY * maskResolution / 5.6f;
 
 				DrawPunch(Mathf.RoundToInt(hitX), Mathf.RoundToInt(hitY));
+
+				bloodDrops.transform.position = hit.point;
+				bloodDrops.Play();
 			}
 		}
 	}
 
 	void DrawPunch ( int hitX, int hitY)
 	{
+		// Compute rect origin
 		int x = hitX - Mathf.RoundToInt(punchSize / 2);
 		int y = hitY - Mathf.RoundToInt(punchSize / 2);
 
+		// Fixing origin and computing new rect size if origin is located negatively
+		int deltaX = Mathf.Abs(x);
+		int deltaY = Mathf.Abs(y);
+		int width  = punchSize - ((x < 0) ? deltaX : 0);
+		int height = punchSize - ((y < 0) ? deltaY : 0);
+		x = Mathf.Max(x, 0);
+		y = Mathf.Max(y, 0);
+
+		// Fixing size in case the rect goes out of the texture
+		if ((x + width)  >= maskResolution) width  = maskResolution - 1 - x;
+		if ((y + height) >= maskResolution) height = maskResolution - 1 - y;
+
 		float currentBlend;
 
-		Color[] cols = faceMask.GetPixels( x, y, punchSize, punchSize);
+		Color[] cols = faceMask.GetPixels( x, y, width, height);
 		for (int i = 0; i < cols.Length; i++)
 		{
 			currentBlend = cols[i].r;
-			cols[i] = Color.white * Mathf.Clamp01(currentBlend - punchResized.GetPixel(i % punchSize, Mathf.FloorToInt(i / punchSize)).a * blendPower);
+			cols[i] = Color.white * Mathf.Clamp01(currentBlend - punchResized.GetPixel(i % width, Mathf.FloorToInt(i / width)).a * blendPower);
 		}
-		faceMask.SetPixels( x, y, punchSize, punchSize, cols);
+		faceMask.SetPixels( x, y, width, height, cols);
 		faceMask.Apply();
 	}
 }
