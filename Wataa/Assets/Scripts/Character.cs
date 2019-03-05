@@ -13,8 +13,7 @@ public struct RollResult
 	{
 		_FaceSprites = new List<List<Sprite>>();
 		_Total = 0;
-		_Rolls = new List<int>(NumDice);
-		_Rolls.AddRange(Enumerable.Repeat(0, NumDice));
+		_Rolls = new List<int>();
 	}
 }
 
@@ -152,7 +151,7 @@ public class Character : MonoBehaviour
 				int result = DicePool[i].Roll();
 				results._FaceSprites.Add(DicePool[i].FaceSprites);
 				results._Total += result;
-				results._Rolls[i] = result;
+				results._Rolls.Add(result);
 			}
 		}
 
