@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 4267979679968707266}
   - component: {fileID: 2206545431448353963}
   m_Layer: 5
-  m_Name: UI_RollPlayer_Die2
+  m_Name: UI_RollAttacker_Die2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -86,7 +86,7 @@ GameObject:
   - component: {fileID: 4602128157023266278}
   - component: {fileID: 3107555662401193491}
   m_Layer: 5
-  m_Name: UI_RollOpponent_Die2
+  m_Name: UI_RollDefender_Die2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -160,7 +160,7 @@ GameObject:
   - component: {fileID: 7941014453515026358}
   - component: {fileID: 4287481743885974843}
   m_Layer: 5
-  m_Name: UI_RollOpponent_Score
+  m_Name: UI_RollDefender_Score
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -237,7 +237,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5019142370806704147}
   m_Layer: 5
-  m_Name: UI_RollOpponent
+  m_Name: UI_RollDefender
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -276,7 +276,7 @@ GameObject:
   - component: {fileID: 6237973985026860443}
   - component: {fileID: 4665450367317145898}
   m_Layer: 5
-  m_Name: UI_RollOpponent_Die0
+  m_Name: UI_RollDefender_Die0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -350,7 +350,7 @@ GameObject:
   - component: {fileID: 3824496951548773624}
   - component: {fileID: 2935146677597326719}
   m_Layer: 5
-  m_Name: UI_RollOpponent_Die1
+  m_Name: UI_RollDefender_Die1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -577,29 +577,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 622b566224f90b74a89441979a862dbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  dieFaces:
-  - {fileID: 21300000, guid: 528bacda7d729214ab4963a6932ec212, type: 3}
-  - {fileID: 21300000, guid: 99723b0843d32ba4084ce0134d506e7e, type: 3}
-  - {fileID: 21300000, guid: b92a69dbadb9ada43af6868b4e2e3abd, type: 3}
-  - {fileID: 21300000, guid: a2f800ff53a94d54ca69b1251c5271c3, type: 3}
-  - {fileID: 21300000, guid: 7cdf615c7a34a524185d02b33da1a8df, type: 3}
-  - {fileID: 21300000, guid: 8b04ce2971baff94b92e8d70496dc205, type: 3}
-  colorWin: {r: 1, g: 0.88235295, b: 0, a: 1}
-  colorNeutral: {r: 1, g: 1, b: 1, a: 1}
-  playerDice:
+  _ColorWin: {r: 0.99690694, g: 1, b: 0.36320752, a: 0}
+  _ColorNeutral: {r: 0.8584906, g: 0, b: 0, a: 0}
+  _AttackerDice:
   - {fileID: 1874146079480939273}
   - {fileID: 881907328199592440}
   - {fileID: 2206545431448353963}
   - {fileID: 1407262754654915432}
   - {fileID: 3201664622612087616}
-  playerScore: {fileID: 7071418271249921405}
-  opponentDice:
+  _AttackerScore: {fileID: 7071418271249921405}
+  _DefenderDice:
   - {fileID: 4665450367317145898}
   - {fileID: 2935146677597326719}
   - {fileID: 3107555662401193491}
   - {fileID: 3656249185081623315}
   - {fileID: 8930093780716072241}
-  opponentScore: {fileID: 4287481743885974843}
+  _DefenderScore: {fileID: 4287481743885974843}
 --- !u!1 &4018501923870276705
 GameObject:
   m_ObjectHideFlags: 0
@@ -610,7 +603,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4018501923870276704}
   m_Layer: 5
-  m_Name: UI_RollPlayer
+  m_Name: UI_RollAttacker
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -728,7 +721,7 @@ GameObject:
   - component: {fileID: 4936370970278230179}
   - component: {fileID: 3201664622612087616}
   m_Layer: 5
-  m_Name: UI_RollPlayer_Die4
+  m_Name: UI_RollAttacker_Die4
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -800,7 +793,7 @@ GameObject:
   m_Component:
   - component: {fileID: 476141997874028588}
   m_Layer: 5
-  m_Name: UI_RollPlayer_Dice
+  m_Name: UI_RollAttacker_Dice
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -842,7 +835,7 @@ GameObject:
   - component: {fileID: 3318643850513147968}
   - component: {fileID: 881907328199592440}
   m_Layer: 5
-  m_Name: UI_RollPlayer_Die1
+  m_Name: UI_RollAttacker_Die1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -914,7 +907,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1278030884076175160}
   m_Layer: 5
-  m_Name: UI_RollOpponent_Dice
+  m_Name: UI_RollDefender_Dice
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -956,7 +949,7 @@ GameObject:
   - component: {fileID: 738455645798094526}
   - component: {fileID: 3656249185081623315}
   m_Layer: 5
-  m_Name: UI_RollOpponent_Die3
+  m_Name: UI_RollDefender_Die3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1030,7 +1023,7 @@ GameObject:
   - component: {fileID: 8037702682188012553}
   - component: {fileID: 1407262754654915432}
   m_Layer: 5
-  m_Name: UI_RollPlayer_Die3
+  m_Name: UI_RollAttacker_Die3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1104,7 +1097,7 @@ GameObject:
   - component: {fileID: 7618297681672532640}
   - component: {fileID: 1874146079480939273}
   m_Layer: 5
-  m_Name: UI_RollPlayer_Die0
+  m_Name: UI_RollAttacker_Die0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1178,7 +1171,7 @@ GameObject:
   - component: {fileID: 7652172413885258677}
   - component: {fileID: 8930093780716072241}
   m_Layer: 5
-  m_Name: UI_RollOpponent_Die4
+  m_Name: UI_RollDefender_Die4
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1252,7 +1245,7 @@ GameObject:
   - component: {fileID: 7336693353860101071}
   - component: {fileID: 7071418271249921405}
   m_Layer: 5
-  m_Name: UI_RollPlayer_Score
+  m_Name: UI_RollAttacker_Score
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

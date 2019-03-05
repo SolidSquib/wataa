@@ -43,4 +43,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7df2b5f8ba1d03745bf0ca8e66fbf21d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Sides: 6
+  _Sides: 6
+  _FaceSprites:
+  - {fileID: 21300000, guid: 528bacda7d729214ab4963a6932ec212, type: 3}
+  - {fileID: 21300000, guid: 99723b0843d32ba4084ce0134d506e7e, type: 3}
+  - {fileID: 21300000, guid: b92a69dbadb9ada43af6868b4e2e3abd, type: 3}
+  - {fileID: 21300000, guid: a2f800ff53a94d54ca69b1251c5271c3, type: 3}
+  - {fileID: 21300000, guid: 7cdf615c7a34a524185d02b33da1a8df, type: 3}
+  - {fileID: 21300000, guid: 8b04ce2971baff94b92e8d70496dc205, type: 3}

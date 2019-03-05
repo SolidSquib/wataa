@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class UI_Health_Dice : MonoBehaviour
+public class UIHealth : MonoBehaviour
 {
 	// Gameplay settings
 	public	int		healthMax	= 50;
@@ -18,7 +18,7 @@ public class UI_Health_Dice : MonoBehaviour
 
 	private	bool[]	dice		= new bool[]{ true, true, true, true, true};
 	private int		diceQtt		= 5;
-
+	
 	void switchDice (int diceIndex)
 	{
 		if (diceIndex >= 0 && diceIndex < dice.Length) {

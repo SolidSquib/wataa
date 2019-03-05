@@ -1,6 +1,22 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
+
+public struct RollResult
+{
+	public List<List<Sprite>> _FaceSprites;
+	public int _Total;
+	public List<int> _Rolls;
+
+	public RollResult(int NumDice)
+	{
+		_FaceSprites = new List<List<Sprite>>();
+		_Total = 0;
+		_Rolls = new List<int>(NumDice);
+		_Rolls.AddRange(Enumerable.Repeat(0, NumDice));
+	}
+}
 
 [RequireComponent(typeof(Collider2D))]
 public class Character : MonoBehaviour
@@ -39,12 +55,8 @@ public class Character : MonoBehaviour
 	/// <returns>Did we deal damage?</returns>
 	public bool Attack(Character TargetCharacter)
 	{
-		Debug.Log(ToString() + " attacking " + TargetCharacter.ToString() + ".");
-
-		int myTotal = Roll();
-		int targetTotal = TargetCharacter.Roll();
-		int difference = myTotal - targetTotal;
-
+		int difference = FightManager.Singleton.Fight(this, TargetCharacter);
+		
 		if (difference > 0)
 		{
 			// We won the roll-off and should deal damage to the target.
@@ -129,20 +141,21 @@ public class Character : MonoBehaviour
 	/// Roll all active dice.
 	/// </summary>
 	/// <returns>The total number rolled</returns>
-	public int Roll()
+	public RollResult Roll()
 	{
-		int TotalAmount = 0;
-		
-		foreach (Die die in _DicePool)
+		RollResult results = new RollResult(DicePool.Count);
+
+		for (int i = 0; i < DicePool.Count; ++i)
 		{
-			if (die.IsDieAvailable)
+			if (DicePool[i].IsDieAvailable)
 			{
-				TotalAmount += die.Roll();
+				int result = DicePool[i].Roll();
+				results._FaceSprites.Add(DicePool[i].FaceSprites);
+				results._Total += result;
+				results._Rolls[i] = result;
 			}
 		}
 
-		Debug.Log(ToString() + " Rolled a total of " + TotalAmount.ToString());
-
-		return TotalAmount;
+		return results;
 	}
 }
