@@ -14,6 +14,9 @@ public class PlayerCharacter : Character
 			InputManager.Singleton.OnLeftMouseButtonDown += OnLeftMouseButtonDown;
 		}
 		base.Start();
+
+		UIHealth.Singleton.DiceFill();
+		UIHealth.Singleton.UpdateHealth(CurrentHealth);
 	}
 
 	private void OnDisable()
@@ -55,6 +58,12 @@ public class PlayerCharacter : Character
 				break;
 			}
 		}
+	}
+
+	protected override void OnTakeDamage(int damageAmount)
+	{
+		base.OnTakeDamage(damageAmount);
+		UIHealth.Singleton.UpdateHealth(CurrentHealth);
 	}
 
 	private void OnLeftMouseButtonDown(Vector3 mouseLocation)

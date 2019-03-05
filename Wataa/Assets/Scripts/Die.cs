@@ -23,11 +23,13 @@ public class Die : MonoBehaviour
 	public void DisableDie()
 	{
 		_DieAvailable = false;
+		UIHealth.Singleton.DieLose();
 	}
 
 	public void EnableDie()
 	{
 		_DieAvailable = true;
+		UIHealth.Singleton.DieEarn();
 	}
 
 	void OnValidate()

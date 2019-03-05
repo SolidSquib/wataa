@@ -27,7 +27,7 @@ public class FightManager : MonoBehaviour
 		{
 			_DiceFightInstance = this;
 		}
-		else if (_DiceFightInstance == this)
+		else if (_DiceFightInstance != this)
 		{
 			Destroy(gameObject);
 		}

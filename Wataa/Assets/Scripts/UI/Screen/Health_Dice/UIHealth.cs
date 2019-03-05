@@ -18,8 +18,23 @@ public class UIHealth : MonoBehaviour
 
 	private	bool[]	dice		= new bool[]{ true, true, true, true, true};
 	private int		diceQtt		= 5;
-	
-	void switchDice (int diceIndex)
+
+	private static UIHealth _UIHealthInstance;
+	public static UIHealth Singleton => _UIHealthInstance;
+
+	private void Awake()
+	{
+		if (_UIHealthInstance == null)
+		{
+			_UIHealthInstance = this;
+		}
+		else if (_UIHealthInstance != this)
+		{
+			Destroy(gameObject);
+		}
+	}
+
+	void SwitchDice (int diceIndex)
 	{
 		if (diceIndex >= 0 && diceIndex < dice.Length) {
 			dice[diceIndex] = !dice[diceIndex];
@@ -27,31 +42,31 @@ public class UIHealth : MonoBehaviour
 		}
 	}
 
-	public void dieLose ()
+	public void DieLose ()
 	{
 		if (diceQtt > 0)
 		{
-			switchDice(--diceQtt);
+			SwitchDice(--diceQtt);
 		}
 	}
 
-	public void dieEarn ()
+	public void DieEarn ()
 	{
 		if (diceQtt < diceMax)
 		{
-			switchDice(diceQtt++);
+			SwitchDice(diceQtt++);
 		}
 	}
 
-	public void diceFill ()
+	public void DiceFill ()
 	{
 		while (diceQtt < diceMax)
 		{
-			dieEarn();
+			DieEarn();
 		}
 	}
 
-	public void updateHealth (int healthNew)
+	public void UpdateHealth (int healthNew)
 	{
 		int healthCurrent = Mathf.RoundToInt(Mathf.Clamp( healthNew, 0.0f, healthMax));
 
