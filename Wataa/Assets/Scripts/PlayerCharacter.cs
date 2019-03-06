@@ -4,8 +4,7 @@ using UnityEngine;
 
 public class PlayerCharacter : Character
 {
-	public delegate void RestDelegate();
-	public event RestDelegate EventOnRest;
+	private bool _IsBusy = false;
 
 	protected override void Start()
 	{
@@ -27,7 +26,12 @@ public class PlayerCharacter : Character
 		}
 	}
 
-	public void Rest()
+	/// <summary>
+	/// Rest up, re-enabling the first disabled die in the character's pool. In reaction, all enemies on
+	/// screen make an attack against the resting character.
+	/// </summary>
+	/// <returns></returns>
+	public IEnumerator Rest(ActionComplete callback = null)
 	{
 		// Iterate forwards through the dice pool and activate the first inactive die
 		for (int i = 0; i < _DicePool.Count; ++i)
@@ -39,10 +43,23 @@ public class PlayerCharacter : Character
 			}
 		}
 
-		if (EventOnRest != null)
+		// All enemies in the viewport get an attack of opportunity.
+		Enemy[] AllEnemies = FindObjectsOfType<Enemy>();
+		for (int i = 0; i < AllEnemies.Length; ++i)
 		{
-			EventOnRest();
-		}		
+			Vector3 viewportPosition = Camera.main.WorldToViewportPoint(AllEnemies[i].transform.position);
+			if (viewportPosition.x > 0 && viewportPosition.x < 1 &&
+				viewportPosition.y > 0 && viewportPosition.y < 1 &&
+				viewportPosition.z > 0)
+			{
+				yield return AllEnemies[i].MoveAndAttack(this);
+			}
+		}
+		
+		if (callback != null)
+		{
+			callback();
+		}
 	}
 
 	protected override void OnAttackFailed(Character otherCharacter, int parryAmount)
@@ -68,26 +85,36 @@ public class PlayerCharacter : Character
 
 	private void OnLeftMouseButtonDown(Vector3 mouseLocation)
 	{
-		// Trace for the clicked object
-		Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-		Vector2 mousePos2D = new Vector2(mousePos.x, mousePos.y);
-
-		RaycastHit2D hit = Physics2D.Raycast(mousePos2D, Vector2.zero);
-		
-		if (hit.collider != null)
+		if (!_IsBusy)
 		{
-			Character hitCharacter = hit.transform.GetComponent<Character>();
-			if (hitCharacter != null)
+			// Trace for the clicked object
+			Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+			Vector2 mousePos2D = new Vector2(mousePos.x, mousePos.y);
+
+			RaycastHit2D hit = Physics2D.Raycast(mousePos2D, Vector2.zero);
+
+			if (hit.collider != null)
 			{
-				if (hitCharacter == this)
+				Character hitCharacter = hit.transform.GetComponent<Character>();
+				if (hitCharacter != null)
 				{
-					Rest();
+					_IsBusy = true;
+
+					if (hitCharacter == this)
+					{
+						StartCoroutine(Rest(PlayerActionComplete));
+					}
+					else
+					{
+						StartCoroutine(MoveAndAttack(hitCharacter, PlayerActionComplete));
+					}
 				}
-				else
-				{
-					Attack(hitCharacter);
-				}				
 			}
 		}
-	}	
+	}
+
+	void PlayerActionComplete()
+	{
+		_IsBusy = false;
+	}
 }

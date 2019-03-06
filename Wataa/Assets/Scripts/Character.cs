@@ -1,6 +1,5 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 public struct RollResult
@@ -20,6 +19,9 @@ public struct RollResult
 [RequireComponent(typeof(Collider2D))]
 public class Character : MonoBehaviour
 {
+	public delegate void ActionComplete();
+	public event ActionComplete EventOnActionComplete;
+
 	[SerializeField] List<Die> _SavedDice = new List<Die>();
 	[SerializeField] int _MaxHealth = 50;
 
@@ -30,6 +32,7 @@ public class Character : MonoBehaviour
 	public int MaxHealth => _MaxHealth;
 	public int CurrentHealth => _CurrentHealth;
 	public List<Die> DicePool => _DicePool;
+	public Collider2D CharacterCollider => _Collider;
 
 	// Start is called before the first frame update
 	protected virtual void Start()
@@ -47,15 +50,46 @@ public class Character : MonoBehaviour
 		Debug.Log(ToString() + " Init");
 	}
 
+	public Vector3 GetTargetFightLocation(Character targetCharacter)
+	{
+		Collider2D targetCollider = targetCharacter.CharacterCollider;
+		Vector3 targetLocation = new Vector3(transform.position.x, targetCharacter.transform.position.y, transform.position.z);
+		
+		if (targetLocation.x > targetCharacter.transform.position.x)
+		{
+			targetLocation.x = targetCharacter.transform.position.x + targetCollider.bounds.extents.x + CharacterCollider.bounds.extents.x;
+			return targetLocation;
+		}
+		else
+		{
+			targetLocation.x = targetCharacter.transform.position.x - targetCollider.bounds.extents.x - CharacterCollider.bounds.extents.x;
+			return targetLocation;
+		}
+	}
+
 	/// <summary>
 	/// Attempt to attack a character, initiating a roll off between each character's combined active dice-pools.
 	/// </summary>
 	/// <param name="TargetCharacter">The character to attack</param>
 	/// <returns>Did we deal damage?</returns>
-	public bool Attack(Character TargetCharacter)
+	public IEnumerator MoveAndAttack(Character TargetCharacter, ActionComplete callback = null)
 	{
+		Vector3 startingLocation = transform.position;
+		Vector3 targetLocation = GetTargetFightLocation(TargetCharacter);
+
+		// first we need to move towards the target
+		while (transform.position != targetLocation)
+		{
+			float step = 10.0f * Time.deltaTime;
+			transform.position = Vector3.MoveTowards(transform.position, targetLocation, step);
+			yield return null;
+		}
+
+		// Calculate the results of the fight.
 		int difference = FightManager.Singleton.Fight(this, TargetCharacter);
-		
+		yield return new WaitForSeconds(5.0f);
+
+		// Call the correct event.
 		if (difference > 0)
 		{
 			// We won the roll-off and should deal damage to the target.
@@ -70,9 +104,20 @@ public class Character : MonoBehaviour
 		{
 			// The roll-off was a draw.
 			OnAttackDraw(TargetCharacter);
+		}		
+
+		// return the character to its start location.
+		while (transform.position != startingLocation)
+		{
+			float step = 10.0f * Time.deltaTime;
+			transform.position = Vector3.MoveTowards(transform.position, startingLocation, step);
+			yield return null;
 		}
 
-		return false;
+		if (callback != null)
+		{
+			callback();
+		}
 	}
 
 	/// <summary>

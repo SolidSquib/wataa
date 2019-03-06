@@ -117,7 +117,7 @@ public class FightManager : MonoBehaviour
 
 		// Hide the fight GUI
 		StartCoroutine(CanvasShow(false, 5f));
-
+		
 		return attackerResults._Total - defenderResults._Total;
 	}
 }
