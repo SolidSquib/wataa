@@ -20,7 +20,6 @@ public struct RollResult
 public class Character : MonoBehaviour
 {
 	public delegate void ActionComplete();
-	public event ActionComplete EventOnActionComplete;
 
 	[SerializeField] List<Die> _SavedDice = new List<Die>();
 	[SerializeField] int _MaxHealth = 50;
@@ -46,23 +45,31 @@ public class Character : MonoBehaviour
 
 		_CurrentHealth = _MaxHealth;
 		_Collider = GetComponent<Collider2D>();
-
-		Debug.Log(ToString() + " Init");
 	}
 
 	public Vector3 GetTargetFightLocation(Character targetCharacter)
 	{
-		Collider2D targetCollider = targetCharacter.CharacterCollider;
-		Vector3 targetLocation = new Vector3(transform.position.x, targetCharacter.transform.position.y, transform.position.z);
-		
-		if (targetLocation.x > targetCharacter.transform.position.x)
+		Collider2D targetCollider = targetCharacter.GetComponent<Collider2D>();
+		return GetTargetFightLocation(targetCollider);
+	}
+
+	public Vector3 GetTargetFightLocation(Prop targetProp)
+	{
+		Collider2D targetCollider = targetProp.GetComponent<Collider2D>();
+		return GetTargetFightLocation(targetCollider);
+	}
+
+	public Vector3 GetTargetFightLocation(Collider2D targetCollider)
+	{
+		Vector3 targetLocation = new Vector3(transform.position.x, targetCollider.transform.position.y, transform.position.z);
+		if (targetLocation.x > targetCollider.transform.position.x)
 		{
-			targetLocation.x = targetCharacter.transform.position.x + targetCollider.bounds.extents.x + CharacterCollider.bounds.extents.x;
+			targetLocation.x = targetCollider.transform.position.x + targetCollider.bounds.extents.x + CharacterCollider.bounds.extents.x;
 			return targetLocation;
 		}
 		else
 		{
-			targetLocation.x = targetCharacter.transform.position.x - targetCollider.bounds.extents.x - CharacterCollider.bounds.extents.x;
+			targetLocation.x = targetCollider.transform.position.x - targetCollider.bounds.extents.x - CharacterCollider.bounds.extents.x;
 			return targetLocation;
 		}
 	}
@@ -72,10 +79,10 @@ public class Character : MonoBehaviour
 	/// </summary>
 	/// <param name="TargetCharacter">The character to attack</param>
 	/// <returns>Did we deal damage?</returns>
-	public IEnumerator MoveAndAttack(Character TargetCharacter, ActionComplete callback = null)
+	public IEnumerator MoveAndAttack(Character targetCharacter, ActionComplete callback = null)
 	{
 		Vector3 startingLocation = transform.position;
-		Vector3 targetLocation = GetTargetFightLocation(TargetCharacter);
+		Vector3 targetLocation = GetTargetFightLocation(targetCharacter);
 
 		// first we need to move towards the target
 		while (transform.position != targetLocation)
@@ -86,25 +93,66 @@ public class Character : MonoBehaviour
 		}
 
 		// Calculate the results of the fight.
-		int difference = FightManager.Singleton.Fight(this, TargetCharacter);
+		int difference = FightManager.Singleton.Fight(this, targetCharacter);
 		yield return new WaitForSeconds(5.0f);
 
 		// Call the correct event.
 		if (difference > 0)
 		{
 			// We won the roll-off and should deal damage to the target.
-			OnAttackSuccess(TargetCharacter, Mathf.Abs(difference));
+			OnAttackSuccess(targetCharacter, Mathf.Abs(difference));
 		}
 		else if (difference < 0)
 		{
 			// We lost the roll-off and should face the consequences.
-			OnAttackFailed(TargetCharacter, Mathf.Abs(difference));
+			OnAttackFailed(targetCharacter, Mathf.Abs(difference));
 		}
 		else
 		{
 			// The roll-off was a draw.
-			OnAttackDraw(TargetCharacter);
+			OnAttackDraw(targetCharacter);
 		}		
+
+		// return the character to its start location.
+		while (transform.position != startingLocation)
+		{
+			float step = 10.0f * Time.deltaTime;
+			transform.position = Vector3.MoveTowards(transform.position, startingLocation, step);
+			yield return null;
+		}
+
+		if (callback != null)
+		{
+			callback();
+		}
+	}
+
+	public IEnumerator MoveAndAttack(Character targetCharacter, Prop useProp, ActionComplete callback = null)
+	{
+		Vector3 startingLocation = transform.position;
+		Vector3 targetLocation = GetTargetFightLocation(useProp);
+
+		// first we need to move towards the target
+		while (transform.position != targetLocation)
+		{
+			float step = 10.0f * Time.deltaTime;
+			transform.position = Vector3.MoveTowards(transform.position, targetLocation, step);
+			yield return null;
+		}
+
+		// Calculate the results of the fight.
+		int damage = FightManager.Singleton.FightWithProp(this, targetCharacter, useProp);
+		yield return new WaitForSeconds(5.0f);
+
+		if (damage > 0)
+		{
+			yield return useProp.MoveAndAttack(targetCharacter, damage);
+			OnAttackSuccess(targetCharacter, damage);
+		}
+		else
+		{
+			OnAttackFailed(null, 0);
+		}
 
 		// return the character to its start location.
 		while (transform.position != startingLocation)
@@ -127,7 +175,10 @@ public class Character : MonoBehaviour
 	/// <param name="damageAmount">The amount the roll won by</param>
 	protected virtual void OnAttackSuccess(Character otherCharacter, int damageAmount)
 	{
-		otherCharacter.OnTakeDamage(damageAmount);
+		if (otherCharacter)
+		{
+			otherCharacter.OnTakeDamage(damageAmount);
+		}		
 	}
 
 	/// <summary>
@@ -137,7 +188,10 @@ public class Character : MonoBehaviour
 	/// <param name="parryAmount">The amount lost by</param>
 	protected virtual void OnAttackFailed(Character otherCharacter, int parryAmount)
 	{
-		otherCharacter.OnParry(this, parryAmount);
+		if (otherCharacter)
+		{
+			otherCharacter.OnParry(this, parryAmount);
+		}		
 	}
 
 	/// <summary>
@@ -185,11 +239,11 @@ public class Character : MonoBehaviour
 	/// Roll all active dice.
 	/// </summary>
 	/// <returns>The total number rolled</returns>
-	public RollResult Roll()
+	public RollResult Roll(int numDice = -1)
 	{
 		RollResult results = new RollResult(DicePool.Count);
 
-		for (int i = 0; i < DicePool.Count; ++i)
+		for (int i = 0; i < (numDice == -1 ? DicePool.Count : Mathf.Min(numDice, DicePool.Count)); ++i)
 		{
 			if (DicePool[i].IsDieAvailable)
 			{

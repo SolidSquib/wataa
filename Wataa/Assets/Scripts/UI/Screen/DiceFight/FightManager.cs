@@ -120,4 +120,38 @@ public class FightManager : MonoBehaviour
 		
 		return attackerResults._Total - defenderResults._Total;
 	}
+
+	public int FightWithProp(Character attacker, Character defender, Prop prop)
+	{
+		// Check if args are correct
+		if (attacker == null || defender == null || prop == null) return 0;
+
+		// Show the fight GUI
+		CanvasShow(true);
+
+		// Roll a single die for the roll off with the prop.
+		RollResult attackerResults = attacker.Roll(1);
+
+		HideAllDice();
+
+		for (int i = 0; i < attackerResults._Rolls.Count; ++i)
+		{
+			if (i < attackerResults._Rolls.Count)
+			{
+				_AttackerDice[i].enabled = true;
+				_AttackerDice[i].sprite = attackerResults._FaceSprites[i][attackerResults._Rolls[i]];
+			}
+		}
+
+		_AttackerScore.text = attackerResults._Total.ToString();
+		_DefenderScore.text = prop.ActivationValue.ToString();
+
+		if (attackerResults._Total >= prop.ActivationValue) _AttackerScore.color = _ColorWin;
+		if (prop.ActivationValue >= attackerResults._Total) _DefenderScore.color = _ColorWin;
+
+		// Hide the fight GUI
+		StartCoroutine(CanvasShow(false, 5f));
+
+		return Mathf.Max((attackerResults._Total - prop.ActivationValue) * prop.BaseDamage, 0);
+	}
 }

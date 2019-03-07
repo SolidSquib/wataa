@@ -11,6 +11,7 @@ public class PlayerCharacter : Character
 		if (InputManager.Singleton)
 		{
 			InputManager.Singleton.OnLeftMouseButtonDown += OnLeftMouseButtonDown;
+			InputManager.Singleton.OnLeftMouseButtonUp += OnLeftMouseButtonUp;
 		}
 		base.Start();
 
@@ -23,7 +24,27 @@ public class PlayerCharacter : Character
 		if (InputManager.Singleton)
 		{
 			InputManager.Singleton.OnLeftMouseButtonDown -= OnLeftMouseButtonDown;
+			InputManager.Singleton.OnLeftMouseButtonUp -= OnLeftMouseButtonUp;
 		}
+	}
+
+	public List<Enemy> GetVisibleEnemies()
+	{
+		List<Enemy> visibleEnemies = new List<Enemy>();
+
+		Enemy[] allEnemies = FindObjectsOfType<Enemy>();
+		for (int i = 0; i < allEnemies.Length; ++i)
+		{
+			Vector3 viewportPosition = Camera.main.WorldToViewportPoint(allEnemies[i].transform.position);
+			if (viewportPosition.x > 0 && viewportPosition.x < 1 &&
+				viewportPosition.y > 0 && viewportPosition.y < 1 &&
+				viewportPosition.z > 0)
+			{
+				visibleEnemies.Add(allEnemies[i]);
+			}
+		}
+
+		return visibleEnemies;
 	}
 
 	/// <summary>
@@ -44,16 +65,10 @@ public class PlayerCharacter : Character
 		}
 
 		// All enemies in the viewport get an attack of opportunity.
-		Enemy[] AllEnemies = FindObjectsOfType<Enemy>();
-		for (int i = 0; i < AllEnemies.Length; ++i)
+		List<Enemy> visibleEnemies = GetVisibleEnemies();
+		foreach (Enemy enemy in visibleEnemies)
 		{
-			Vector3 viewportPosition = Camera.main.WorldToViewportPoint(AllEnemies[i].transform.position);
-			if (viewportPosition.x > 0 && viewportPosition.x < 1 &&
-				viewportPosition.y > 0 && viewportPosition.y < 1 &&
-				viewportPosition.z > 0)
-			{
-				yield return AllEnemies[i].MoveAndAttack(this);
-			}
+			yield return enemy.MoveAndAttack(this);
 		}
 		
 		if (callback != null)
@@ -95,8 +110,8 @@ public class PlayerCharacter : Character
 
 			if (hit.collider != null)
 			{
-				Character hitCharacter = hit.transform.GetComponent<Character>();
-				if (hitCharacter != null)
+				//Character hitCharacter = hit.transform.GetComponent<Character>();
+				if (hit.transform.GetComponent<Character>() is Character hitCharacter)
 				{
 					_IsBusy = true;
 
@@ -109,12 +124,41 @@ public class PlayerCharacter : Character
 						StartCoroutine(MoveAndAttack(hitCharacter, PlayerActionComplete));
 					}
 				}
+				else if (hit.transform.GetComponent<Prop>() is Prop hitProp)
+				{
+					Vector2 clickOffset = hitProp.transform.position - mousePos;
+					DragDropManager.Singleton.StartDragDropOp(hitProp, mousePos, clickOffset, OnPropDropped);
+				}
 			}
 		}
+	}
+
+	private void OnLeftMouseButtonUp(Vector3 mouseLocation)
+	{
+		DragDropManager.Singleton.StopDragDropOp();
 	}
 
 	void PlayerActionComplete()
 	{
 		_IsBusy = false;
+	}
+
+	void OnPropDropped(Prop prop, Vector3 dropLocation, Collider2D[] recievers)
+	{
+		Enemy enemy = null;
+		foreach(Collider2D collider in recievers)
+		{
+			if (collider.gameObject.GetComponent<Enemy>() is Enemy enemyReciever)
+			{
+				enemy = enemyReciever;
+				break;
+			}
+		}
+
+		if (enemy)
+		{
+			StartCoroutine(MoveAndAttack(enemy, prop, PlayerActionComplete));
+			
+		}
 	}
 }

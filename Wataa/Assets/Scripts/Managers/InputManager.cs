@@ -55,15 +55,6 @@ public class InputManager : MonoBehaviour
 		}
 	}
 
-	// Use this for initialization
-	void Start()
-	{
-    }
-
-    void OnDisable()
-	{
-	}
-
 	void Update()
 	{
 		// Mouse event
