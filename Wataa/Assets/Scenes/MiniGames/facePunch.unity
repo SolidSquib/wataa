@@ -4924,8 +4924,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 13827d2de7de531429e79e2d524a160e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  punchTexture: {fileID: 2800000, guid: e052abd491ac4904a91f1507ec585c93, type: 3}
-  punchSize: 256
+  punchTexture:
+  - {fileID: 2800000, guid: fd346fdb90be246428776121a07ef79d, type: 3}
+  - {fileID: 2800000, guid: 2274a4e22de90fc42ac7ee4421a46c7c, type: 3}
   maskResolution: 1024
   blendPower: 0.35
   bloodDrops: {fileID: 149018884}

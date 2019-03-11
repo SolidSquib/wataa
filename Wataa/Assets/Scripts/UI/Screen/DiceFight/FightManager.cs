@@ -8,9 +8,10 @@ public class FightManager : MonoBehaviour
 	// Gameplay settings
 	public	Color		_ColorWin;
 	public	Color		_ColorNeutral;
+	public	float		_GUIDelay = 1f;
 
 	// GUI elements
-	public	Image[]		_AttackerDice		= new Image[5];
+	public	Image[]		_AttackerDice	= new Image[5];
 	public	Text		_AttackerScore;
 	public	Image[]		_DefenderDice	= new Image[5];
 	public	Text		_DefenderScore;
@@ -116,7 +117,7 @@ public class FightManager : MonoBehaviour
 		if (defenderResults._Total >= attackerResults._Total)	_DefenderScore.color = _ColorWin;
 
 		// Hide the fight GUI
-		StartCoroutine(CanvasShow(false, 5f));
+		StartCoroutine(CanvasShow(false, _GUIDelay));
 		
 		return attackerResults._Total - defenderResults._Total;
 	}
@@ -150,7 +151,7 @@ public class FightManager : MonoBehaviour
 		if (prop.ActivationValue >= attackerResults._Total) _DefenderScore.color = _ColorWin;
 
 		// Hide the fight GUI
-		StartCoroutine(CanvasShow(false, 5f));
+		StartCoroutine(CanvasShow(false, _GUIDelay));
 
 		return Mathf.Max((attackerResults._Total - prop.ActivationValue) * prop.BaseDamage, 0);
 	}
