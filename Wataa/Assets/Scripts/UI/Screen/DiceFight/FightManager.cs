@@ -18,15 +18,29 @@ public class FightManager : MonoBehaviour
 
 	public	Color		_ColorWin;
 	public	Color		_ColorNeutral;
+	public	float		_GUIDelay = 1f;
 
 	// GUI elements
-	public	Image[]		_AttackerDice		= new Image[5];
+	public	Image[]		_AttackerDice	= new Image[5];
 	public	Text		_AttackerScore;
 	public	Image[]		_DefenderDice	= new Image[5];
 	public	Text		_DefenderScore;
 
 	private	Image		_Background;
 	private	GameObject	_CanvasChild;
+
+	public enum _DicePattern
+	{
+		All,
+		AllButOne,
+		AllButTwo,
+		HalfHalf,
+		SerieMajor,
+		Serie,
+		None
+	}
+	public Dictionary<_DicePattern, GameObject> _PatternToMinigame = new Dictionary<_DicePattern, GameObject>();
+	public GameObject tempPrefab;
 
 	private static FightManager _DiceFightInstance;
 	public static FightManager Singleton => _DiceFightInstance;
@@ -52,6 +66,9 @@ public class FightManager : MonoBehaviour
 
 		// Hiding the fight GUI
 		CanvasShow(false);
+
+		// Matching dice patterns to minigames
+		_PatternToMinigame.Add( _DicePattern.SerieMajor, tempPrefab);
 	}
 
 	// Update is called once per frame
@@ -91,7 +108,43 @@ public class FightManager : MonoBehaviour
 		}
 	}
 
-	public int Fight (Character attacker, Character defender)
+	private GameObject DicePatternCheck (RollResult RollToCheck)
+	{
+		GameObject toReturn;
+		_DicePattern currentPattern = _DicePattern.None;
+
+		// BIG WARNING! Using temporary variables here
+		int maxDieScore = 5;
+
+		// Analysing the current roll
+		List<int> sortedRoll = RollToCheck._Rolls;
+		sortedRoll.Sort((a ,b) => b.CompareTo(a));  // Sorting in descending order
+
+		// Checking if the roll is a serie
+		bool isSerie = true;
+		int listSize = sortedRoll.Count;
+		for (int i = 0; i < listSize-2; i++)
+		{
+			if (sortedRoll[i] - sortedRoll[i+1] != 1)
+			{
+				isSerie = false;
+				break;
+			}
+		}
+		if (isSerie)
+		{
+			if (sortedRoll[0] == maxDieScore)	currentPattern = _DicePattern.SerieMajor;
+			else								currentPattern = _DicePattern.Serie;
+		}
+
+		// !!!!!!!!!!!!!! For test purposes, will always trigger a minigame here
+		currentPattern = _DicePattern.SerieMajor;
+
+		_PatternToMinigame.TryGetValue(currentPattern, out toReturn);
+		return toReturn;
+	}
+
+	public int Fight (Character Attacker, Character Defender)
 	{
 		// Check if args are correct
 		if (attacker == null || defender == null) return 0;
@@ -110,6 +163,11 @@ public class FightManager : MonoBehaviour
 		RollResult rightResults = bPlayerAttacking ? defenderResults : attackerResults;
 
 		for (int i = 0; i < Mathf.Max(leftResults._Rolls.Count, rightResults._Rolls.Count); ++i)
+		// Player results are always on the left.
+		GameObject MinigameToInstanciate = DicePatternCheck(leftResults);
+		if (MinigameToInstanciate != null) Instantiate<GameObject>(MinigameToInstanciate);
+
+		for (int i = 0; i < Mathf.Max(attackerResults._Rolls.Count, defenderResults._Rolls.Count); ++i)
 		{
 			if (i < leftResults._Rolls.Count)
 			{
@@ -131,7 +189,7 @@ public class FightManager : MonoBehaviour
 		if (rightResults._Total >= leftResults._Total)	_DefenderScore.color = _ColorWin;
 
 		// Hide the fight GUI
-		StartCoroutine(CanvasShow(false, 5f));
+		StartCoroutine(CanvasShow(false, _GUIDelay));
 		
 		return attackerResults._Total - defenderResults._Total;
 	}
@@ -165,7 +223,7 @@ public class FightManager : MonoBehaviour
 		if (prop.ActivationValue >= attackerResults._Total) _DefenderScore.color = _ColorWin;
 
 		// Hide the fight GUI
-		StartCoroutine(CanvasShow(false, 5f));
+		StartCoroutine(CanvasShow(false, _GUIDelay));
 
 		return Mathf.Max(/*(*/attackerResults._Total/* - prop.ActivationValue)*/ * prop.BaseDamage, 0);
 	}

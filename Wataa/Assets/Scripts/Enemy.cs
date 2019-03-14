@@ -1,9 +1,13 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Enemy : Character
 {
+	public Text _textHealth;
+	public Text _textDice;
+
 	public delegate void OnEnemyDefeated(Enemy enemy);
 
 	private static event OnEnemyDefeated EventOnEnemyDefeated;
@@ -13,6 +17,12 @@ public class Enemy : Character
 	void OnEnable()
 	{
 		_PlayerRef = FindObjectOfType<PlayerCharacter>();
+	}
+
+	private void Update()
+	{
+		_textHealth.text = _CurrentHealth.ToString();
+		_textDice.text = _DicePool.Count.ToString();
 	}
 
 	public static void BindOnEnemyDefeated(OnEnemyDefeated callback)

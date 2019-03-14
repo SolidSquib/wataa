@@ -5,16 +5,18 @@ using UnityEngine;
 public class FacePunch : MonoBehaviour
 {
 	// Gameplay parameters
-	public Texture2D punchTexture;
-	public int punchSize = 256;
+	public float minigameTime = 5f;
+	public Texture2D[] punchTexture;
 	public int maskResolution = 1024;
 	public float blendPower = 0.2f;
 
 	public ParticleSystem bloodDrops;
 
+	private int punchSize;
 	private Material faceMaterial;
 	private Texture2D faceMask;
-	private Texture2D punchResized;
+
+	private int punchCount = 0;
 
     // Start is called before the first frame update
     void Start()
@@ -34,11 +36,8 @@ public class FacePunch : MonoBehaviour
 
 		faceMaterial.SetTexture("_Mask", faceMask);
 
-		// Resize punch mask
-		punchResized = punchTexture;
-		punchResized.Resize(punchSize, punchSize);
-		punchResized.Apply();
-    }
+		Destroy(transform.parent.gameObject, minigameTime);
+	}
 
     // Update is called once per frame
     void FixedUpdate()
@@ -61,12 +60,17 @@ public class FacePunch : MonoBehaviour
 
 				bloodDrops.transform.position = hit.point;
 				bloodDrops.Play();
+
+				punchCount++;
 			}
 		}
 	}
 
 	void DrawPunch ( int hitX, int hitY)
 	{
+		Texture2D tempPunch = punchTexture[Random.Range( 0, punchTexture.Length)];
+		punchSize = tempPunch.width;
+
 		// Compute rect origin
 		int x = hitX - Mathf.RoundToInt(punchSize / 2);
 		int y = hitY - Mathf.RoundToInt(punchSize / 2);
@@ -89,7 +93,7 @@ public class FacePunch : MonoBehaviour
 		for (int i = 0; i < cols.Length; i++)
 		{
 			currentBlend = cols[i].r;
-			cols[i] = Color.white * Mathf.Clamp01(currentBlend - punchResized.GetPixel(i % width, Mathf.FloorToInt(i / width)).a * blendPower);
+			cols[i] = Color.white * Mathf.Clamp01(currentBlend - tempPunch.GetPixel(i % width, Mathf.FloorToInt(i / width)).r * blendPower);
 		}
 		faceMask.SetPixels( x, y, width, height, cols);
 		faceMask.Apply();
