@@ -151,7 +151,8 @@ public class Character : MonoBehaviour
 		}
 		else
 		{
-			OnAttackFailed(null, 0);
+			OnAttackFailed(useProp);
+			useProp.Explode();
 		}
 
 		// return the character to its start location.
@@ -192,6 +193,14 @@ public class Character : MonoBehaviour
 		{
 			otherCharacter.OnParry(this, parryAmount);
 		}		
+	}
+
+	protected virtual void OnAttackFailed(Prop prop)
+	{
+		if (prop)
+		{
+			OnTakeDamage(prop.BaseDamage);
+		}
 	}
 
 	/// <summary>
