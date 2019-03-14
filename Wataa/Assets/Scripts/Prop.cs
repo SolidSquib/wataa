@@ -26,6 +26,11 @@ public class Prop : MonoBehaviour
 		_Sprite = _SpriteRenderer.sprite;
     }
 
+	public void Explode()
+	{
+		Destroy(gameObject);
+	}
+
 	public IEnumerator MoveAndAttack(Character target, int damageResult)
 	{
 		// first we need to move towards the target
@@ -37,6 +42,6 @@ public class Prop : MonoBehaviour
 			yield return null;
 		}
 
-		Destroy(gameObject);
+		Explode();
 	}
 }

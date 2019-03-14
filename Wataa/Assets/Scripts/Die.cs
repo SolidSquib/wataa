@@ -16,7 +16,7 @@ public class Die : MonoBehaviour
 
 	public int Roll()
 	{
-		_LastRoll = Random.Range(1, _Sides);
+		_LastRoll = Random.Range(1, _Sides+1);
 		return LastRoll;
 	}
 

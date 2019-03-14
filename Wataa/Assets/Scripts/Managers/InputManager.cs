@@ -10,6 +10,7 @@ public class InputManager : MonoBehaviour
 	public delegate void Delegate_TwoVector3Params(Vector3 Position, Vector3 Delta);
 	public delegate void Delegate_Float(float Value);
 	public delegate void Delegate_Empty();
+	public delegate void Delegate_Touch(Touch touch);
 
 	// Mouse
 	public event Delegate_TwoVector3Params OnMouseMoveEvent;
@@ -17,6 +18,11 @@ public class InputManager : MonoBehaviour
 	public event Delegate_Vector3Param OnLeftMouseButtonUp;
 	public event Delegate_Vector3Param OnRightMouseButtonDown;
 	public event Delegate_Vector3Param OnRightMouseButtonUp;
+
+	// Touch
+	public event Delegate_Touch OnTouchDragEvent;
+	public event Delegate_Touch OnTouchStartEvent;
+	public event Delegate_Touch OnTouchEndEvent;
 
 	// Raw Key input
 	private Dictionary<KeyCode, System.Action> KeyDownCallbacks = new Dictionary<KeyCode, System.Action>();
@@ -33,9 +39,9 @@ public class InputManager : MonoBehaviour
 	private Dictionary<string, float> AxisValues = new Dictionary<string, float>();
 
 	// Mouse variables
-	bool mLeftMouseButtonDown = false;
-	bool mRightMouseButtonDown = false;
-	
+	bool _LeftMouseButtonDown = false;
+	bool _RightMouseButtonDown = false;
+
 	#region Property Accessors 
 	public static InputManager Singleton
 	{
@@ -64,6 +70,29 @@ public class InputManager : MonoBehaviour
 		DistributeAxisEvents();
 	}
 
+	void CheckTouchEvents()
+	{
+		// Account for five fingers max.
+		for (int i = 0; i < 5; ++i)
+		{
+			Touch touch = Input.GetTouch(i);
+			switch(touch.phase)
+			{
+				case TouchPhase.Began:
+					OnTouchStartEvent(touch);
+					break;
+
+				case TouchPhase.Ended:
+					OnTouchEndEvent(touch);
+					break;
+
+				case TouchPhase.Moved:
+					OnTouchDragEvent(touch);
+					break;
+			}
+		}
+	}
+
 	void CheckMouseEvents()
 	{
         // Check and update mouse position
@@ -73,27 +102,27 @@ public class InputManager : MonoBehaviour
 
         // Check and update left mouse button
         bool LeftMouseButtonDown = Input.GetMouseButton(0);
-		if (OnLeftMouseButtonDown != null && LeftMouseButtonDown && !mLeftMouseButtonDown)
+		if (OnLeftMouseButtonDown != null && LeftMouseButtonDown && !_LeftMouseButtonDown)
 		{
 			OnLeftMouseButtonDown(MousePosition);
 		}
-		else if (OnLeftMouseButtonUp != null && !LeftMouseButtonDown && mLeftMouseButtonDown)
+		else if (OnLeftMouseButtonUp != null && !LeftMouseButtonDown && _LeftMouseButtonDown)
 		{
 			OnLeftMouseButtonUp(MousePosition);
 		}
-		mLeftMouseButtonDown = LeftMouseButtonDown;
+		_LeftMouseButtonDown = LeftMouseButtonDown;
 
 		// Check and update right mouse button
 		bool RightMouseButtonDown = Input.GetMouseButton(1);
-		if (OnRightMouseButtonDown != null && RightMouseButtonDown && !mRightMouseButtonDown)
+		if (OnRightMouseButtonDown != null && RightMouseButtonDown && !_RightMouseButtonDown)
 		{
 			OnRightMouseButtonDown(MousePosition);
 		}
-		else if (OnRightMouseButtonUp != null && !RightMouseButtonDown && mRightMouseButtonDown)
+		else if (OnRightMouseButtonUp != null && !RightMouseButtonDown && _RightMouseButtonDown)
 		{
 			OnRightMouseButtonUp(MousePosition);
 		}
-		mRightMouseButtonDown = RightMouseButtonDown;
+		_RightMouseButtonDown = RightMouseButtonDown;
     }
 
 	void CheckKeyboardEvents()

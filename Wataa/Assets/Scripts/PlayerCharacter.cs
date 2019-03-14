@@ -7,16 +7,19 @@ public class PlayerCharacter : Character
 	private bool _IsBusy = false;
 
 	protected override void Start()
-	{
+	{		
+		base.Start();
+
+		UIHealth.Singleton.DiceFill();
+		UIHealth.Singleton.UpdateHealth(CurrentHealth);
+
 		if (InputManager.Singleton)
 		{
 			InputManager.Singleton.OnLeftMouseButtonDown += OnLeftMouseButtonDown;
 			InputManager.Singleton.OnLeftMouseButtonUp += OnLeftMouseButtonUp;
 		}
-		base.Start();
 
-		UIHealth.Singleton.DiceFill();
-		UIHealth.Singleton.UpdateHealth(CurrentHealth);
+		Enemy.BindOnEnemyDefeated(OnEnemyDefeated);
 	}
 
 	private void OnDisable()
@@ -26,6 +29,8 @@ public class PlayerCharacter : Character
 			InputManager.Singleton.OnLeftMouseButtonDown -= OnLeftMouseButtonDown;
 			InputManager.Singleton.OnLeftMouseButtonUp -= OnLeftMouseButtonUp;
 		}
+
+		Enemy.UnbindOnEnemyDefeated(OnEnemyDefeated);
 	}
 
 	public List<Enemy> GetVisibleEnemies()
@@ -160,5 +165,34 @@ public class PlayerCharacter : Character
 			StartCoroutine(MoveAndAttack(enemy, prop, PlayerActionComplete));
 			
 		}
+	}
+
+	protected virtual void OnEnemyDefeated(Enemy enemy)
+	{
+		List<Enemy> enemies = GetVisibleEnemies();
+		if (enemies.Count <= 1 && FightManager.Singleton.AnyEnemiesLeft())
+		{
+			MoveToNextLocation();
+		}		
+	}
+
+	protected IEnumerator MoveToNextLocation()
+	{
+		Vector3 targetLocation = Vector3.zero;
+
+		if (FightManager.Singleton.GetNextFightZoneLocation(this, ref targetLocation))
+		{
+			// Spawn health pickups between here and the target location.
+
+			// Start moving.
+			while (transform.position != targetLocation)
+			{
+				float step = 10.0f * Time.deltaTime;
+				transform.position = Vector3.MoveTowards(transform.position, targetLocation, step);
+				yield return null;
+			}
+
+			FightManager.Singleton.ActivateFightZone();
+		}		
 	}
 }

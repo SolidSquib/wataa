@@ -3,9 +3,19 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+
+
 public class FightManager : MonoBehaviour
 {
+	struct FightZone
+	{
+		public float _YPosition;
+		public List<GameObject> _EnemyPrefabs;
+	}
+
 	// Gameplay settings
+	[SerializeField] List<FightZone> _FightZones = new List<FightZone>();
+
 	public	Color		_ColorWin;
 	public	Color		_ColorNeutral;
 	public	float		_GUIDelay = 1f;
@@ -134,43 +144,48 @@ public class FightManager : MonoBehaviour
 		return toReturn;
 	}
 
-	public int Fight (Character Attacker, Character Defender)
+	public int Fight (Character attacker, Character defender)
 	{
 		// Check if args are correct
-		if (Attacker == null || Defender == null) return 0;
+		if (attacker == null || defender == null) return 0;
 
 		// Show the fight GUI
 		CanvasShow(true);
 
-		RollResult attackerResults = Attacker.Roll();
-		RollResult defenderResults = Defender.Roll();
+		bool bPlayerAttacking = attacker is PlayerCharacter;
+
+		RollResult attackerResults = attacker.Roll();
+		RollResult defenderResults = defender.Roll();
 
 		HideAllDice();
 
-		// BIG WARNING! I need player vs enemy, not att vs defender. So I can send the player roll there!
-		GameObject MinigameToInstanciate = DicePatternCheck(attackerResults);
+		RollResult leftResults = bPlayerAttacking ? attackerResults : defenderResults;
+		RollResult rightResults = bPlayerAttacking ? defenderResults : attackerResults;
+
+		// Player results are always on the left.
+		GameObject MinigameToInstanciate = DicePatternCheck(leftResults);
 		if (MinigameToInstanciate != null) Instantiate<GameObject>(MinigameToInstanciate);
 
-		for (int i = 0; i < Mathf.Max(attackerResults._Rolls.Count, defenderResults._Rolls.Count); ++i)
+		for (int i = 0; i < Mathf.Max(leftResults._Rolls.Count, rightResults._Rolls.Count); ++i)
 		{
-			if (i < attackerResults._Rolls.Count)
+			if (i < leftResults._Rolls.Count)
 			{
 				_AttackerDice[i].enabled = true;
-				_AttackerDice[i].sprite = attackerResults._FaceSprites[i][attackerResults._Rolls[i]];
+				_AttackerDice[i].sprite = leftResults._FaceSprites[i][leftResults._Rolls[i]-1];
 			}
 
-			if (i < defenderResults._Rolls.Count)
+			if (i < rightResults._Rolls.Count)
 			{
 				_DefenderDice[i].enabled = true;
-				_DefenderDice[i].sprite = defenderResults._FaceSprites[i][defenderResults._Rolls[i]];
+				_DefenderDice[i].sprite = rightResults._FaceSprites[i][rightResults._Rolls[i]-1];
 			}
 		}
 
-		_AttackerScore.text = attackerResults._Total.ToString();
-		_DefenderScore.text = defenderResults._Total.ToString();
+		_AttackerScore.text = leftResults._Total.ToString();
+		_DefenderScore.text = rightResults._Total.ToString();
 
-		if (attackerResults._Total >= defenderResults._Total)	_AttackerScore.color = _ColorWin;
-		if (defenderResults._Total >= attackerResults._Total)	_DefenderScore.color = _ColorWin;
+		if (leftResults._Total >= rightResults._Total)	_AttackerScore.color = _ColorWin;
+		if (rightResults._Total >= leftResults._Total)	_DefenderScore.color = _ColorWin;
 
 		// Hide the fight GUI
 		StartCoroutine(CanvasShow(false, _GUIDelay));
@@ -196,7 +211,7 @@ public class FightManager : MonoBehaviour
 			if (i < attackerResults._Rolls.Count)
 			{
 				_AttackerDice[i].enabled = true;
-				_AttackerDice[i].sprite = attackerResults._FaceSprites[i][attackerResults._Rolls[i]];
+				_AttackerDice[i].sprite = attackerResults._FaceSprites[i][attackerResults._Rolls[i]-1];
 			}
 		}
 
@@ -209,6 +224,54 @@ public class FightManager : MonoBehaviour
 		// Hide the fight GUI
 		StartCoroutine(CanvasShow(false, _GUIDelay));
 
-		return Mathf.Max((attackerResults._Total - prop.ActivationValue) * prop.BaseDamage, 0);
+		return Mathf.Max(/*(*/attackerResults._Total/* - prop.ActivationValue)*/ * prop.BaseDamage, 0);
+	}
+
+	public bool AnyEnemiesLeft()
+	{
+		return _FightZones.Count != 0;
+	}
+
+	public void ActivateFightZone()
+	{
+
+	}
+
+	public bool GetNextFightZoneLocation(PlayerCharacter player, ref Vector3 OutLocation)
+	{
+		if (AnyEnemiesLeft())
+		{
+			OutLocation.x = player.transform.position.x;
+			OutLocation.y = _FightZones[0]._YPosition;
+			OutLocation.z = player.transform.position.z;
+			return true;
+		}
+
+		return false;
+	}
+
+	public float GetDistanceFromNextFightZone(PlayerCharacter player)
+	{
+		if (_FightZones.Count > 0)
+		{
+			Vector3 playerLocation = player.transform.position;
+			float distance = _FightZones[0]._YPosition - playerLocation.y;
+			return distance;
+		}
+
+		return 0;
+	}
+
+	private void OnValidate()
+	{
+		for (int i = 0; i < _FightZones.Count; ++i)
+		{
+			if (i < 0)
+			{
+				FightZone PreviousZone = _FightZones[i - 1];
+				FightZone CurrentZone = _FightZones[i];
+				CurrentZone._YPosition = Mathf.Max(PreviousZone._YPosition + 5, CurrentZone._YPosition);
+			}
+		}
 	}
 }
