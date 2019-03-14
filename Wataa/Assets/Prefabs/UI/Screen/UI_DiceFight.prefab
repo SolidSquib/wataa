@@ -578,7 +578,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _ColorWin: {r: 0.99690694, g: 1, b: 0.36320752, a: 0}
-  _ColorNeutral: {r: 0.8584906, g: 0, b: 0, a: 0}
+  _ColorNeutral: {r: 1, g: 1, b: 1, a: 0}
+  _GUIDelay: 1
   _AttackerDice:
   - {fileID: 1874146079480939273}
   - {fileID: 881907328199592440}
@@ -593,6 +594,8 @@ MonoBehaviour:
   - {fileID: 3656249185081623315}
   - {fileID: 8930093780716072241}
   _DefenderScore: {fileID: 4287481743885974843}
+  tempPrefab: {fileID: 8347183764228564377, guid: a074105d7875206489911bd360735159,
+    type: 3}
 --- !u!1 &4018501923870276705
 GameObject:
   m_ObjectHideFlags: 0

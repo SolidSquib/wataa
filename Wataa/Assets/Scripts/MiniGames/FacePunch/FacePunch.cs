@@ -5,6 +5,7 @@ using UnityEngine;
 public class FacePunch : MonoBehaviour
 {
 	// Gameplay parameters
+	public float minigameTime = 5f;
 	public Texture2D[] punchTexture;
 	public int maskResolution = 1024;
 	public float blendPower = 0.2f;
@@ -14,6 +15,8 @@ public class FacePunch : MonoBehaviour
 	private int punchSize;
 	private Material faceMaterial;
 	private Texture2D faceMask;
+
+	private int punchCount = 0;
 
     // Start is called before the first frame update
     void Start()
@@ -32,6 +35,8 @@ public class FacePunch : MonoBehaviour
 		faceMask.Apply();
 
 		faceMaterial.SetTexture("_Mask", faceMask);
+
+		Destroy(transform.parent.gameObject, minigameTime);
 	}
 
     // Update is called once per frame
@@ -55,6 +60,8 @@ public class FacePunch : MonoBehaviour
 
 				bloodDrops.transform.position = hit.point;
 				bloodDrops.Play();
+
+				punchCount++;
 			}
 		}
 	}

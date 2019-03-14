@@ -19,6 +19,19 @@ public class FightManager : MonoBehaviour
 	private	Image		_Background;
 	private	GameObject	_CanvasChild;
 
+	public enum _DicePattern
+	{
+		All,
+		AllButOne,
+		AllButTwo,
+		HalfHalf,
+		SerieMajor,
+		Serie,
+		None
+	}
+	public Dictionary<_DicePattern, GameObject> _PatternToMinigame = new Dictionary<_DicePattern, GameObject>();
+	public GameObject tempPrefab;
+
 	private static FightManager _DiceFightInstance;
 	public static FightManager Singleton => _DiceFightInstance;
 
@@ -43,6 +56,9 @@ public class FightManager : MonoBehaviour
 
 		// Hiding the fight GUI
 		CanvasShow(false);
+
+		// Matching dice patterns to minigames
+		_PatternToMinigame.Add( _DicePattern.SerieMajor, tempPrefab);
 	}
 
 	// Update is called once per frame
@@ -82,6 +98,42 @@ public class FightManager : MonoBehaviour
 		}
 	}
 
+	private GameObject DicePatternCheck (RollResult RollToCheck)
+	{
+		GameObject toReturn;
+		_DicePattern currentPattern = _DicePattern.None;
+
+		// BIG WARNING! Using temporary variables here
+		int maxDieScore = 5;
+
+		// Analysing the current roll
+		List<int> sortedRoll = RollToCheck._Rolls;
+		sortedRoll.Sort((a ,b) => b.CompareTo(a));  // Sorting in descending order
+
+		// Checking if the roll is a serie
+		bool isSerie = true;
+		int listSize = sortedRoll.Count;
+		for (int i = 0; i < listSize-2; i++)
+		{
+			if (sortedRoll[i] - sortedRoll[i+1] != 1)
+			{
+				isSerie = false;
+				break;
+			}
+		}
+		if (isSerie)
+		{
+			if (sortedRoll[0] == maxDieScore)	currentPattern = _DicePattern.SerieMajor;
+			else								currentPattern = _DicePattern.Serie;
+		}
+
+		// !!!!!!!!!!!!!! For test purposes, will always trigger a minigame here
+		currentPattern = _DicePattern.SerieMajor;
+
+		_PatternToMinigame.TryGetValue(currentPattern, out toReturn);
+		return toReturn;
+	}
+
 	public int Fight (Character Attacker, Character Defender)
 	{
 		// Check if args are correct
@@ -94,6 +146,10 @@ public class FightManager : MonoBehaviour
 		RollResult defenderResults = Defender.Roll();
 
 		HideAllDice();
+
+		// BIG WARNING! I need player vs enemy, not att vs defender. So I can send the player roll there!
+		GameObject MinigameToInstanciate = DicePatternCheck(attackerResults);
+		if (MinigameToInstanciate != null) Instantiate<GameObject>(MinigameToInstanciate);
 
 		for (int i = 0; i < Mathf.Max(attackerResults._Rolls.Count, defenderResults._Rolls.Count); ++i)
 		{
