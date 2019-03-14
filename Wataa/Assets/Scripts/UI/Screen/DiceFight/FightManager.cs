@@ -144,7 +144,7 @@ public class FightManager : MonoBehaviour
 		return toReturn;
 	}
 
-	public int Fight (Character Attacker, Character Defender)
+	public int Fight (Character attacker, Character defender)
 	{
 		// Check if args are correct
 		if (attacker == null || defender == null) return 0;
@@ -162,12 +162,11 @@ public class FightManager : MonoBehaviour
 		RollResult leftResults = bPlayerAttacking ? attackerResults : defenderResults;
 		RollResult rightResults = bPlayerAttacking ? defenderResults : attackerResults;
 
-		for (int i = 0; i < Mathf.Max(leftResults._Rolls.Count, rightResults._Rolls.Count); ++i)
 		// Player results are always on the left.
 		GameObject MinigameToInstanciate = DicePatternCheck(leftResults);
 		if (MinigameToInstanciate != null) Instantiate<GameObject>(MinigameToInstanciate);
 
-		for (int i = 0; i < Mathf.Max(attackerResults._Rolls.Count, defenderResults._Rolls.Count); ++i)
+		for (int i = 0; i < Mathf.Max(leftResults._Rolls.Count, rightResults._Rolls.Count); ++i)
 		{
 			if (i < leftResults._Rolls.Count)
 			{
