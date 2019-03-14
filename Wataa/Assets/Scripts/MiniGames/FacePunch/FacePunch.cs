@@ -8,7 +8,7 @@ public class FacePunch : MonoBehaviour
 	public float minigameTime = 5f;
 	public Texture2D[] punchTexture;
 	public int maskResolution = 1024;
-	public float blendPower = 0.2f;
+	public float blendPower = 0.35f;
 
 	public ParticleSystem bloodDrops;
 
@@ -34,7 +34,7 @@ public class FacePunch : MonoBehaviour
 		faceMask.SetPixels(cols);
 		faceMask.Apply();
 
-		faceMaterial.SetTexture("_Mask", faceMask);
+		faceMaterial.SetTexture("_MaskTex", faceMask);
 
 		Destroy(transform.parent.gameObject, minigameTime);
 	}
@@ -44,10 +44,9 @@ public class FacePunch : MonoBehaviour
     {
 		if (Input.GetMouseButtonDown(0))
 		{
-			Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-			RaycastHit hit;
+			RaycastHit2D hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
 
-			if (Physics.Raycast(ray, out hit, 50f))
+			if (hit.collider != null)
 			{
 				// (-2.8f, 2.8f => 0, maskResolution)
 				float hitX = hit.point[0]+2.8f;
