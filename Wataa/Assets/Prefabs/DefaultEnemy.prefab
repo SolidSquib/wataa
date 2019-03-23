@@ -650,7 +650,7 @@ MonoBehaviour:
   - {fileID: 2880546423762371643, guid: b27dc8e5d66a1c94c95cf0149d24c0bb, type: 3}
   - {fileID: 2880546423762371643, guid: b27dc8e5d66a1c94c95cf0149d24c0bb, type: 3}
   - {fileID: 2880546423762371643, guid: b27dc8e5d66a1c94c95cf0149d24c0bb, type: 3}
-  _MaxHealth: 25
+  _MaxHealth: 1
   _textHealth: {fileID: 2365728836209031346}
   _textDice: {fileID: 1793798796859844824}
 --- !u!1 &6932079951384004894

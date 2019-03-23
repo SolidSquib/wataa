@@ -6,6 +6,8 @@ public class InputManager : MonoBehaviour
 	// Singleton instance
 	private static InputManager mInputMan;
 
+	private static bool bEnableInput = true;
+
 	public delegate void Delegate_Vector3Param(Vector3 Position);
 	public delegate void Delegate_TwoVector3Params(Vector3 Position, Vector3 Delta);
 	public delegate void Delegate_Float(float Value);
@@ -63,11 +65,24 @@ public class InputManager : MonoBehaviour
 
 	void Update()
 	{
-		// Mouse event
-		CheckMouseEvents();
-		CheckKeyboardEvents();
-		CheckButtonEvents();
-		DistributeAxisEvents();
+		if (bEnableInput)
+		{
+			// Mouse event
+			CheckMouseEvents();
+			CheckKeyboardEvents();
+			CheckButtonEvents();
+			DistributeAxisEvents();
+		}
+	}
+
+	public void EnableInput()
+	{
+		bEnableInput = true;
+	}
+
+	public void DisableInput()
+	{
+		bEnableInput = false;
 	}
 
 	void CheckTouchEvents()

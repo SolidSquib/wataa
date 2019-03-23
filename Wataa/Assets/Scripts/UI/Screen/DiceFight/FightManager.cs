@@ -7,18 +7,19 @@ using UnityEngine.UI;
 
 public class FightManager : MonoBehaviour
 {
-	struct FightZone
+	[System.Serializable]
+	public class FightZone
 	{
-		public float _YPosition;
-		public List<GameObject> _EnemyPrefabs;
+		public float _YPosition = 0;
+		public List<GameObject> _EnemyPrefabs = new List<GameObject>();
 	}
 
 	// Gameplay settings
 	[SerializeField] List<FightZone> _FightZones = new List<FightZone>();
+	[SerializeField] float _FightDelay = 2.0f;
 
 	public	Color		_ColorWin;
 	public	Color		_ColorNeutral;
-	public	float		_GUIDelay = 1f;
 
 	// GUI elements
 	public	Image[]		_AttackerDice	= new Image[5];
@@ -29,7 +30,12 @@ public class FightManager : MonoBehaviour
 	private	Image		_Background;
 	private	GameObject	_CanvasChild;
 
-	public enum _DicePattern
+	private List<Enemy> _CurrentEnemies = new List<Enemy>();
+	private int _EnemiesAwaitingMove = 0;
+
+	public float FightDelay => _FightDelay;
+
+	public enum EDicePattern
 	{
 		All,
 		AllButOne,
@@ -39,7 +45,7 @@ public class FightManager : MonoBehaviour
 		Serie,
 		None
 	}
-	public Dictionary<_DicePattern, GameObject> _PatternToMinigame = new Dictionary<_DicePattern, GameObject>();
+	public Dictionary<EDicePattern, GameObject> _PatternToMinigame = new Dictionary<EDicePattern, GameObject>();
 	public GameObject tempPrefab;
 
 	private static FightManager _DiceFightInstance;
@@ -68,15 +74,9 @@ public class FightManager : MonoBehaviour
 		CanvasShow(false);
 
 		// Matching dice patterns to minigames
-		_PatternToMinigame.Add( _DicePattern.SerieMajor, tempPrefab);
+		_PatternToMinigame.Add( EDicePattern.SerieMajor, tempPrefab);
 	}
-
-	// Update is called once per frame
-	void Update()
-	{
-
-	}
-
+	
 	private void CanvasShow (bool show)
 	{
 		_Background.enabled = show;
@@ -111,7 +111,7 @@ public class FightManager : MonoBehaviour
 	private GameObject DicePatternCheck (RollResult RollToCheck)
 	{
 		GameObject toReturn;
-		_DicePattern currentPattern = _DicePattern.None;
+		EDicePattern currentPattern = EDicePattern.None;
 
 		// BIG WARNING! Using temporary variables here
 		int maxDieScore = 5;
@@ -133,12 +133,12 @@ public class FightManager : MonoBehaviour
 		}
 		if (isSerie)
 		{
-			if (sortedRoll[0] == maxDieScore)	currentPattern = _DicePattern.SerieMajor;
-			else								currentPattern = _DicePattern.Serie;
+			if (sortedRoll[0] == maxDieScore)	currentPattern = EDicePattern.SerieMajor;
+			else								currentPattern = EDicePattern.Serie;
 		}
 
 		// !!!!!!!!!!!!!! For test purposes, will always trigger a minigame here
-		currentPattern = _DicePattern.SerieMajor;
+		currentPattern = EDicePattern.SerieMajor;
 
 		_PatternToMinigame.TryGetValue(currentPattern, out toReturn);
 		return toReturn;
@@ -188,7 +188,7 @@ public class FightManager : MonoBehaviour
 		if (rightResults._Total >= leftResults._Total)	_DefenderScore.color = _ColorWin;
 
 		// Hide the fight GUI
-		StartCoroutine(CanvasShow(false, _GUIDelay));
+		StartCoroutine(CanvasShow(false, FightDelay));
 		
 		return attackerResults._Total - defenderResults._Total;
 	}
@@ -222,19 +222,98 @@ public class FightManager : MonoBehaviour
 		if (prop.ActivationValue >= attackerResults._Total) _DefenderScore.color = _ColorWin;
 
 		// Hide the fight GUI
-		StartCoroutine(CanvasShow(false, _GUIDelay));
+		StartCoroutine(CanvasShow(false, FightDelay));
 
-		return Mathf.Max(/*(*/attackerResults._Total/* - prop.ActivationValue)*/ * prop.BaseDamage, 0);
+		return attackerResults._Total > prop.ActivationValue
+			? Mathf.Max(attackerResults._Total * prop.BaseDamage, 0)
+			: -1;
 	}
 
 	public bool AnyEnemiesLeft()
 	{
-		return _FightZones.Count != 0;
+		return _CurrentEnemies.Count != 0 || _FightZones.Count != 0;
 	}
 
-	public void ActivateFightZone()
+	public List<Enemy> GetCurrentEnemies()
 	{
+		return _CurrentEnemies;
+	}
 
+	public bool ActivateFightZone()
+	{
+		if (AnyEnemiesLeft())
+		{
+			InputManager.Singleton.DisableInput();
+
+			//Grab the next fight zone and then remove it from the list.
+			FightZone Zone = _FightZones[0];
+			_FightZones.RemoveAt(0);
+
+			// Spawn the enemies.
+			foreach (GameObject prefab in Zone._EnemyPrefabs)
+			{				
+				GameObject newEnemy = Instantiate(prefab);
+				newEnemy.transform.position = Vector3.zero;
+				Enemy enemyScript = newEnemy.GetComponent<Enemy>();
+				Debug.Assert(enemyScript != null, "Instantiated a non-enemy type prefab in a fight zone.");
+
+				Vector2 enemyDimensions = enemyScript.GetDimensions();
+				Vector3 spawnLocation = EnemySpawnManager.Singleton.GetRandomSpawnLocation(enemyDimensions);
+
+				newEnemy.transform.position = spawnLocation;
+
+				Vector3 centerScreenPosition = Camera.main.ScreenToWorldPoint(new Vector3(Camera.main.pixelWidth / 2, Camera.main.pixelHeight / 2, 0));
+				Vector3 topScreenPosition = Camera.main.ScreenToWorldPoint(new Vector3(Camera.main.pixelWidth / 2, Camera.main.pixelHeight, 0));
+				Vector3 bottomScreenPosition = Camera.main.ScreenToWorldPoint(new Vector3(Camera.main.pixelWidth / 2, 0, 0));
+
+				Vector3 targetPosition = Vector3.zero;
+				float minX = 0, maxX = 0, minY = 0, maxY = 0;
+
+				int targetChoice = Random.Range(0, 3);
+				switch (targetChoice)
+				{
+					case 0:
+						// Stand above the player.
+						minX = centerScreenPosition.x - EnemySpawnManager.Singleton.SpawnableExtents + (enemyDimensions.x / 2);
+						maxX = centerScreenPosition.x - EnemySpawnManager.Singleton.SpawnableExtents - (enemyDimensions.x / 2);
+
+						minY = centerScreenPosition.y + EnemySpawnManager.Singleton.PlayerExtents + (enemyDimensions.y / 2);
+						maxY = topScreenPosition.y - (enemyDimensions.y / 2);
+						break;
+
+					case 1:
+						// Stand to the left of the player.
+						minX = centerScreenPosition.x - EnemySpawnManager.Singleton.SpawnableExtents + (enemyDimensions.x / 2);
+						maxX = centerScreenPosition.x - EnemySpawnManager.Singleton.PlayerExtents - (enemyDimensions.x / 2);
+
+						minY = bottomScreenPosition.y + (enemyDimensions.y / 2);
+						maxY = topScreenPosition.y - (enemyDimensions.y / 2);
+						break;
+
+					case 2:
+						// Stand to the right of the player.
+						minX = centerScreenPosition.x + EnemySpawnManager.Singleton.SpawnableExtents - (enemyDimensions.x / 2);
+						maxX = centerScreenPosition.x + EnemySpawnManager.Singleton.PlayerExtents + (enemyDimensions.x / 2);
+
+						minY = bottomScreenPosition.y + (enemyDimensions.y / 2);
+						maxY = topScreenPosition.y - (enemyDimensions.y / 2);
+						break;
+				}
+
+				StartCoroutine(enemyScript.Move(new Vector3(Random.Range(minX, maxX), Random.Range(minY, maxY), 0), true, EnemyActivationCompleted));
+			}
+		}
+
+		return false;
+	}
+
+	private void EnemyActivationCompleted()
+	{
+		_EnemiesAwaitingMove -= 1;
+		if (_EnemiesAwaitingMove <= 0)
+		{
+			InputManager.Singleton.EnableInput();
+		}
 	}
 
 	public bool GetNextFightZoneLocation(PlayerCharacter player, ref Vector3 OutLocation)
@@ -266,12 +345,40 @@ public class FightManager : MonoBehaviour
 	{
 		for (int i = 0; i < _FightZones.Count; ++i)
 		{
-			if (i < 0)
+			if (i > 0)
 			{
 				FightZone PreviousZone = _FightZones[i - 1];
-				FightZone CurrentZone = _FightZones[i];
-				CurrentZone._YPosition = Mathf.Max(PreviousZone._YPosition + 5, CurrentZone._YPosition);
+				_FightZones[i]._YPosition = Mathf.Max(PreviousZone._YPosition + 5, _FightZones[i]._YPosition);
+			}
+			else
+			{
+				_FightZones[i]._YPosition = Mathf.Max(0, _FightZones[i]._YPosition);
 			}
 		}
+	}
+
+	private void OnDrawGizmosSelected()
+	{
+		foreach (FightZone zone in _FightZones)
+		{
+			Vector3 startLocation = new Vector3(-1000, zone._YPosition, 0);
+			Vector3 endLocation = new Vector3(1000, zone._YPosition, 0);
+
+			Gizmos.color = Color.red;
+			Gizmos.DrawLine(startLocation, endLocation);
+		}
+	}
+
+	public void RegisterEnemy(Enemy enemy)
+	{
+		if (!_CurrentEnemies.Contains(enemy))
+		{
+			_CurrentEnemies.Add(enemy);
+		}		
+	}
+
+	public void UnregisterEnemy(Enemy enemy)
+	{
+		_CurrentEnemies.Remove(enemy);
 	}
 }

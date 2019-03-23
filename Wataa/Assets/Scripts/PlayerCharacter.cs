@@ -6,10 +6,8 @@ public class PlayerCharacter : Character
 {
 	private bool _IsBusy = false;
 
-	protected override void Start()
-	{		
-		base.Start();
-
+	protected void Start()
+	{
 		UIHealth.Singleton.DiceFill();
 		UIHealth.Singleton.UpdateHealth(CurrentHealth);
 
@@ -19,7 +17,7 @@ public class PlayerCharacter : Character
 			InputManager.Singleton.OnLeftMouseButtonUp += OnLeftMouseButtonUp;
 		}
 
-		Enemy.BindOnEnemyDefeated(OnEnemyDefeated);
+		FightManager.Singleton.ActivateFightZone();
 	}
 
 	private void OnDisable()
@@ -29,27 +27,6 @@ public class PlayerCharacter : Character
 			InputManager.Singleton.OnLeftMouseButtonDown -= OnLeftMouseButtonDown;
 			InputManager.Singleton.OnLeftMouseButtonUp -= OnLeftMouseButtonUp;
 		}
-
-		Enemy.UnbindOnEnemyDefeated(OnEnemyDefeated);
-	}
-
-	public List<Enemy> GetVisibleEnemies()
-	{
-		List<Enemy> visibleEnemies = new List<Enemy>();
-
-		Enemy[] allEnemies = FindObjectsOfType<Enemy>();
-		for (int i = 0; i < allEnemies.Length; ++i)
-		{
-			Vector3 viewportPosition = Camera.main.WorldToViewportPoint(allEnemies[i].transform.position);
-			if (viewportPosition.x > 0 && viewportPosition.x < 1 &&
-				viewportPosition.y > 0 && viewportPosition.y < 1 &&
-				viewportPosition.z > 0)
-			{
-				visibleEnemies.Add(allEnemies[i]);
-			}
-		}
-
-		return visibleEnemies;
 	}
 
 	/// <summary>
@@ -70,7 +47,7 @@ public class PlayerCharacter : Character
 		}
 
 		// All enemies in the viewport get an attack of opportunity.
-		List<Enemy> visibleEnemies = GetVisibleEnemies();
+		List<Enemy> visibleEnemies = FightManager.Singleton.GetCurrentEnemies();
 		foreach (Enemy enemy in visibleEnemies)
 		{
 			yield return enemy.MoveAndAttack(this);
@@ -145,7 +122,15 @@ public class PlayerCharacter : Character
 
 	void PlayerActionComplete()
 	{
-		_IsBusy = false;
+		List<Enemy> enemies = FightManager.Singleton.GetCurrentEnemies();
+		if (enemies.Count <= 0 && FightManager.Singleton.AnyEnemiesLeft())
+		{
+			StartCoroutine(MoveToNextLocation(PlayerActionComplete));
+		}
+		else
+		{
+			_IsBusy = false;
+		}
 	}
 
 	void OnPropDropped(Prop prop, Vector3 dropLocation, Collider2D[] recievers)
@@ -167,32 +152,35 @@ public class PlayerCharacter : Character
 		}
 	}
 
-	protected virtual void OnEnemyDefeated(Enemy enemy)
-	{
-		List<Enemy> enemies = GetVisibleEnemies();
-		if (enemies.Count <= 1 && FightManager.Singleton.AnyEnemiesLeft())
-		{
-			MoveToNextLocation();
-		}		
-	}
-
-	protected IEnumerator MoveToNextLocation()
+	protected IEnumerator MoveToNextLocation(ActionComplete callback = null)
 	{
 		Vector3 targetLocation = Vector3.zero;
 
 		if (FightManager.Singleton.GetNextFightZoneLocation(this, ref targetLocation))
 		{
+			FollowTarget cameraScript = Camera.main.GetComponent<FollowTarget>();
+			if (cameraScript)
+			{
+				cameraScript.StartFollowing();
+			}
+
 			// Spawn health pickups between here and the target location.
 
 			// Start moving.
-			while (transform.position != targetLocation)
+			yield return Move(targetLocation, false);
+
+			if (cameraScript)
 			{
-				float step = 10.0f * Time.deltaTime;
-				transform.position = Vector3.MoveTowards(transform.position, targetLocation, step);
-				yield return null;
+				cameraScript.StopFollowing();
+				yield return cameraScript.WaitForCameraStop();
 			}
 
 			FightManager.Singleton.ActivateFightZone();
+
+			if (callback != null)
+			{
+				callback();
+			}
 		}		
 	}
 }

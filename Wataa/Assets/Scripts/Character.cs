@@ -23,6 +23,8 @@ public class Character : MonoBehaviour
 
 	[SerializeField] List<Die> _SavedDice = new List<Die>();
 	[SerializeField] int _MaxHealth = 50;
+	[SerializeField] protected float _WalkSpeed = 3;
+	[SerializeField] protected float _RunSpeed = 10;
 
 	protected int _CurrentHealth = 0;
 	protected List<Die> _DicePool = new List<Die>();
@@ -34,7 +36,7 @@ public class Character : MonoBehaviour
 	public Collider2D CharacterCollider => _Collider;
 
 	// Start is called before the first frame update
-	protected virtual void Start()
+	protected virtual void Awake()
     {
         foreach (Die die in _SavedDice)
 		{
@@ -45,6 +47,11 @@ public class Character : MonoBehaviour
 
 		_CurrentHealth = _MaxHealth;
 		_Collider = GetComponent<Collider2D>();
+	}
+
+	public Vector2 GetDimensions()
+	{
+		return CharacterCollider.bounds.size;
 	}
 
 	public Vector3 GetTargetFightLocation(Character targetCharacter)
@@ -74,6 +81,21 @@ public class Character : MonoBehaviour
 		}
 	}
 
+	public IEnumerator Move(Vector3 targetPosition, bool bRun, ActionComplete callback = null)
+	{
+		while (transform.position != targetPosition)
+		{
+			float step = (bRun ? _RunSpeed : _WalkSpeed) * Time.deltaTime;
+			transform.position = Vector3.MoveTowards(transform.position, targetPosition, step);
+			yield return null;
+		}
+
+		if (callback != null)
+		{
+			callback();
+		}
+	}
+
 	/// <summary>
 	/// Attempt to attack a character, initiating a roll off between each character's combined active dice-pools.
 	/// </summary>
@@ -85,16 +107,11 @@ public class Character : MonoBehaviour
 		Vector3 targetLocation = GetTargetFightLocation(targetCharacter);
 
 		// first we need to move towards the target
-		while (transform.position != targetLocation)
-		{
-			float step = 10.0f * Time.deltaTime;
-			transform.position = Vector3.MoveTowards(transform.position, targetLocation, step);
-			yield return null;
-		}
+		yield return Move(targetLocation, true);
 
 		// Calculate the results of the fight.
 		int difference = FightManager.Singleton.Fight(this, targetCharacter);
-		yield return new WaitForSeconds(5.0f);
+		yield return new WaitForSeconds(FightManager.Singleton.FightDelay);
 
 		// Call the correct event.
 		if (difference > 0)
@@ -111,15 +128,10 @@ public class Character : MonoBehaviour
 		{
 			// The roll-off was a draw.
 			OnAttackDraw(targetCharacter);
-		}		
+		}
 
 		// return the character to its start location.
-		while (transform.position != startingLocation)
-		{
-			float step = 10.0f * Time.deltaTime;
-			transform.position = Vector3.MoveTowards(transform.position, startingLocation, step);
-			yield return null;
-		}
+		yield return Move(startingLocation, true);
 
 		if (callback != null)
 		{
@@ -133,16 +145,11 @@ public class Character : MonoBehaviour
 		Vector3 targetLocation = GetTargetFightLocation(useProp);
 
 		// first we need to move towards the target
-		while (transform.position != targetLocation)
-		{
-			float step = 10.0f * Time.deltaTime;
-			transform.position = Vector3.MoveTowards(transform.position, targetLocation, step);
-			yield return null;
-		}
+		yield return Move(targetLocation, true);
 
 		// Calculate the results of the fight.
 		int damage = FightManager.Singleton.FightWithProp(this, targetCharacter, useProp);
-		yield return new WaitForSeconds(5.0f);
+		yield return new WaitForSeconds(FightManager.Singleton.FightDelay);
 
 		if (damage > 0)
 		{
@@ -156,12 +163,7 @@ public class Character : MonoBehaviour
 		}
 
 		// return the character to its start location.
-		while (transform.position != startingLocation)
-		{
-			float step = 10.0f * Time.deltaTime;
-			transform.position = Vector3.MoveTowards(transform.position, startingLocation, step);
-			yield return null;
-		}
+		yield return Move(startingLocation, true);
 
 		if (callback != null)
 		{
