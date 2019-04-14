@@ -6,8 +6,10 @@ public class PlayerCharacter : Character
 {
 	private bool _IsBusy = false;
 
-	protected void Start()
+	protected override void Start()
 	{
+		base.Start();
+
 		UIHealth.Singleton.DiceFill();
 		UIHealth.Singleton.UpdateHealth(CurrentHealth);
 

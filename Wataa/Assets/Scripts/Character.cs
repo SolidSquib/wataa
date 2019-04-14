@@ -35,10 +35,9 @@ public class Character : MonoBehaviour
 	public List<Die> DicePool => _DicePool;
 	public Collider2D CharacterCollider => _Collider;
 
-	// Start is called before the first frame update
-	protected virtual void Awake()
-    {
-        foreach (Die die in _SavedDice)
+	protected virtual void Start()
+	{
+		foreach (Die die in _SavedDice)
 		{
 			Die newDie = Instantiate(die, transform);
 			newDie.EnableDie();
@@ -51,6 +50,11 @@ public class Character : MonoBehaviour
 
 	public Vector2 GetDimensions()
 	{
+		if (CharacterCollider == null)
+		{
+			_Collider = GetComponent<Collider2D>();
+		}
+
 		return CharacterCollider.bounds.size;
 	}
 

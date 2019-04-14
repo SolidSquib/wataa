@@ -110,6 +110,9 @@ public class FightManager : MonoBehaviour
 
 	private GameObject DicePatternCheck (RollResult RollToCheck)
 	{
+		// #TODO: reimpliment this properly after next checkpoint.
+		return null;
+
 		GameObject toReturn;
 		EDicePattern currentPattern = EDicePattern.None;
 
@@ -300,7 +303,7 @@ public class FightManager : MonoBehaviour
 						break;
 				}
 
-				StartCoroutine(enemyScript.Move(new Vector3(Random.Range(minX, maxX), Random.Range(minY, maxY), 0), true, EnemyActivationCompleted));
+				Coroutine coroutine = StartCoroutine(enemyScript.Move(new Vector3(Random.Range(minX, maxX), Random.Range(minY, maxY), 0), true, EnemyActivationCompleted));
 			}
 		}
 
