@@ -98,15 +98,16 @@ public class PlayerCharacter : Character
 
 	private void OnLeftMouseButtonDown(Vector3 mouseLocation)
 	{
-		if (!_IsBusy)
+		
+		// Trace for the clicked object
+		Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+		Vector2 mousePos2D = new Vector2(mousePos.x, mousePos.y);
+
+		RaycastHit2D hit = Physics2D.Raycast(mousePos2D, Vector2.zero);
+
+		if (hit.collider != null)
 		{
-			// Trace for the clicked object
-			Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-			Vector2 mousePos2D = new Vector2(mousePos.x, mousePos.y);
-
-			RaycastHit2D hit = Physics2D.Raycast(mousePos2D, Vector2.zero);
-
-			if (hit.collider != null)
+			if (!_IsBusy)
 			{
 				//Character hitCharacter = hit.transform.GetComponent<Character>();
 				if (hit.transform.GetComponent<Character>() is Character hitCharacter)
@@ -127,10 +128,11 @@ public class PlayerCharacter : Character
 					Vector2 clickOffset = hitProp.transform.position - mousePos;
 					DragDropManager.Singleton.StartDragDropOp(hitProp, mousePos, clickOffset, OnPropDropped);
 				}
-				else if (hit.transform.GetComponent<IClickable>() is IClickable hitClickable)
-				{
-					hitClickable.DoClickAction(this);
-				}
+			}
+
+			if (hit.transform.GetComponent<IClickable>() is IClickable hitClickable)
+			{
+				hitClickable.DoClickAction(this);
 			}
 		}
 	}
