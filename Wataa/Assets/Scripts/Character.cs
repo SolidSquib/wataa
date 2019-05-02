@@ -241,6 +241,11 @@ public class Character : MonoBehaviour
 			Die();
 		}
 	}
+	
+	public virtual void Heal(int HealAmount)
+	{
+		_CurrentHealth = Mathf.Min(CurrentHealth + HealAmount, _MaxHealth);
+	}
 
 	/// <summary>
 	/// Perform animations and remove this character.

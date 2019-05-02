@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class PlayerCharacter : Character
 {
+	[SerializeField] GameObject HeartPrefab = null;
+
 	private bool _IsBusy = false;
 
 	protected override void Start()
@@ -19,6 +21,12 @@ public class PlayerCharacter : Character
 			InputManager.Singleton.OnLeftMouseButtonUp += OnLeftMouseButtonUp;
 		}
 
+		StartCoroutine(BeginPlay(1));
+	}
+
+	IEnumerator BeginPlay(float Delay)
+	{
+		yield return new WaitForSeconds(Delay);
 		FightManager.Singleton.ActivateFightZone();
 	}
 
@@ -82,6 +90,12 @@ public class PlayerCharacter : Character
 		UIHealth.Singleton.UpdateHealth(CurrentHealth);
 	}
 
+	public override void Heal(int HealAmount)
+	{
+		base.Heal(HealAmount);
+		UIHealth.Singleton.UpdateHealth(CurrentHealth);
+	}
+
 	private void OnLeftMouseButtonDown(Vector3 mouseLocation)
 	{
 		if (!_IsBusy)
@@ -112,6 +126,10 @@ public class PlayerCharacter : Character
 				{
 					Vector2 clickOffset = hitProp.transform.position - mousePos;
 					DragDropManager.Singleton.StartDragDropOp(hitProp, mousePos, clickOffset, OnPropDropped);
+				}
+				else if (hit.transform.GetComponent<IClickable>() is IClickable hitClickable)
+				{
+					hitClickable.DoClickAction(this);
 				}
 			}
 		}
@@ -160,6 +178,20 @@ public class PlayerCharacter : Character
 
 		if (FightManager.Singleton.GetNextFightZoneLocation(this, ref targetLocation))
 		{
+			float yDiffBetweenPlayerAndTopOfCamera = Camera.main.ScreenToWorldPoint(new Vector2(0, Screen.height)).y - transform.position.y;
+
+			// Spawn a bunch of heart objects.
+			for (int i = 0; i < Random.Range(1, 5); i++)
+			{
+				float spawnY = Random.Range
+					(Camera.main.ScreenToWorldPoint(new Vector2(0, Screen.height)).y, targetLocation.y + yDiffBetweenPlayerAndTopOfCamera);
+				float spawnX = Random.Range
+					(Camera.main.ScreenToWorldPoint(new Vector2(0, 0)).x, Camera.main.ScreenToWorldPoint(new Vector2(Screen.width, 0)).x);
+
+				Vector3 spawnPosition = new Vector3(spawnX, spawnY, -5);
+				Instantiate(HeartPrefab, spawnPosition, Quaternion.identity);
+			}
+
 			FollowTarget cameraScript = Camera.main.GetComponent<FollowTarget>();
 			if (cameraScript)
 			{
